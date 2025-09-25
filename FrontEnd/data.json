@@ -1,0 +1,19 @@
+{
+  "userId": { "$oid": "688d46db34705c89c1e81b87" },
+  "totalPrice": 290,
+  "totalAfterDiscount": 260,
+  "products": [
+    {
+      "product": { "$oid": "688ea8b63672e14aeb66bc1d" },
+      "quantity": 2
+    },
+    {
+      "product": { "$oid": "688eaa7a3672e14aeb66bc25" },
+      "quantity": 1
+    },
+    {
+      "product": { "$oid": "688eaa7a3672e14aeb66bc27" },
+      "quantity": 1
+    }
+  ]
+}
