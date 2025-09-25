@@ -5,11 +5,9 @@ const couponModel = require("../model/coupon.model");
 
 // Get My Cart
 exports.getMyCart = handlerAsync(async (req, res, next) => {
-  const myCart = await cartModel
-    .findOne({ userId: req.user._id })
-    .populate("products.product");
-  if (!myCart) return res.status(200).json({ status: "success", myCart: null });
-  res.status(200).json({ status: "success", myCart });
+  const myCart = await cartModel.findOne({ userId: req.user._id }).populate("products.product");
+  if (!myCart) return next(new Error("You don't have a cart yet"));
+  res.json({ myCart });
 });
 
 // Add or Create Cart
@@ -17,8 +15,7 @@ exports.addCart = handlerAsync(async (req, res, next) => {
   const { productId, quantity = 1 } = req.body;
   const product = await productModel.findById(productId);
   if (!product) return next(new Error("Product not found"));
-  if (quantity > product.stock)
-    return next(new Error("Quantity exceeds available stock"));
+  if (quantity > product.stock) return next(new Error("Quantity exceeds available stock"));
 
   let cart = await cartModel.findOne({ userId: req.user._id });
 
@@ -33,13 +30,10 @@ exports.addCart = handlerAsync(async (req, res, next) => {
     });
   } else {
     // Update existing cart
-    const existingProduct = cart.products.find(
-      (p) => p.product.toString() === productId
-    );
+    const existingProduct = cart.products.find(p => p.product.toString() === productId);
     if (existingProduct) {
       const newQuantity = existingProduct.quantity + quantity;
-      if (newQuantity > product.stock)
-        return next(new Error("Quantity exceeds stock"));
+      if (newQuantity > product.stock) return next(new Error("Quantity exceeds stock"));
       existingProduct.quantity = newQuantity;
     } else {
       cart.products.push({ product: productId, quantity });
@@ -64,19 +58,13 @@ exports.updateCart = handlerAsync(async (req, res, next) => {
   const cart = await cartModel.findOne({ userId: req.user._id });
   if (!cart) return next(new Error("Cart not found"));
 
-  const existingProduct = cart.products.find(
-    (p) => p.product.toString() === productId
-  );
+  const existingProduct = cart.products.find(p => p.product.toString() === productId);
   if (!existingProduct) return next(new Error("Product not in cart"));
 
-  if (quantity > product.stock)
-    return next(new Error("Quantity exceeds stock"));
+  if (quantity > product.stock) return next(new Error("Quantity exceeds stock"));
 
-  const oldPrice =
-    (product.finalPrice || product.priceBeforeDiscount) *
-    existingProduct.quantity;
-  const newPrice =
-    (product.finalPrice || product.priceBeforeDiscount) * quantity;
+  const oldPrice = (product.finalPrice || product.priceBeforeDiscount) * existingProduct.quantity;
+  const newPrice = (product.finalPrice || product.priceBeforeDiscount) * quantity;
 
   existingProduct.quantity = quantity;
   cart.totalPrice = cart.totalPrice - oldPrice + newPrice;
@@ -99,18 +87,12 @@ exports.deleteProductFromCart = handlerAsync(async (req, res, next) => {
   const product = await productModel.findById(productId);
   if (!product) return next(new Error("Product not found"));
 
-  const productInCart = cart.products.find(
-    (p) => p.product.toString() === productId
-  );
+  const productInCart = cart.products.find(p => p.product.toString() === productId);
   if (!productInCart) return next(new Error("Product not in cart"));
 
-  const productTotal =
-    (product.finalPrice || product.priceBeforeDiscount) *
-    productInCart.quantity;
+  const productTotal = (product.finalPrice || product.priceBeforeDiscount) * productInCart.quantity;
 
-  cart.products = cart.products.filter(
-    (p) => p.product.toString() !== productId
-  );
+  cart.products = cart.products.filter(p => p.product.toString() !== productId);
   cart.totalPrice -= productTotal;
 
   await cart.save();
